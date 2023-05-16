@@ -35,8 +35,8 @@ public class SecurityConfig {
 //    @Autowired
 //    private DataSource dataSource;
 
-//    @Autowired
-//    private CustomAuthenticationProvider customAuthenticationProvider;
+    @Autowired
+    private CustomAuthenticationProvider customAuthenticationProvider;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -51,18 +51,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-//                UserDetails admin = SecurityUser.withUsername("Juan")
-//                .password(encoder.encode("piojito"))
-//                .roles("ADMIN")
-//                .build();
-//        UserDetails user = SecurityUser.withUsername("Elin")
-//                .password(encoder.encode("chloeisgood"))
-//                .roles("USER","ADMIN","HR")
-//                .build();
-//        return new InMemoryUserDetailsManager(admin, user);
-        return new CustomUserDetailsService();
+    public AuthenticationManager authManager(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
+        return authenticationManagerBuilder.build();
     }
+
+//    @Bean
+//    public UserDetailsService userDetailsService() {
+//        return new CustomUserDetailsService();
+//    }
 
 //    @Bean
 //    public UserDetailsManager users(@NotNull HttpSecurity http) throws Exception {
@@ -78,13 +76,13 @@ public class SecurityConfig {
 //        return jdbcUserDetailsManager;
 //    }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(encoder());
-        return authProvider;
-    }
+//    @Bean
+//    public AuthenticationProvider authenticationProvider() {
+//        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+//        authProvider.setUserDetailsService(userDetailsService());
+//        authProvider.setPasswordEncoder(encoder());
+//        return authProvider;
+//    }
 
     @Bean
     public PasswordEncoder encoder() {

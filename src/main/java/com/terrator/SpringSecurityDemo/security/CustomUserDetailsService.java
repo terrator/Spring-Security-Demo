@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Component public class CustomUserDetailsService implements UserDetailsService {
+//@Component
+public class CustomUserDetailsService implements UserDetailsService {
     @Autowired
     private SecurityUserRepository securityUserRepository;
 
