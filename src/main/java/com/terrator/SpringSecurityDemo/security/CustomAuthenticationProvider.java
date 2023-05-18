@@ -10,12 +10,16 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,9 +38,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String email = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        SecurityUser user = securityUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("SecurityUser not found"));
+        SecurityUser user = securityUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (encoder.matches(password, user.getPassword())) {
+//            UserDetails principal = new User(email, password, getAuthorities(user.getRoles()));
             return new UsernamePasswordAuthenticationToken(email, password, getAuthorities(user.getRoles()));
         } else {
             throw new BadCredentialsException("Invalid Credentials");
@@ -44,8 +49,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 //        return null;
     }
 
-    private @NotNull Set<SimpleGrantedAuthority> getAuthorities(@NotNull List<String> authorities) {
-        Set<SimpleGrantedAuthority> list = new HashSet<>();
+    private @NotNull List<GrantedAuthority> getAuthorities(@NotNull List<String> authorities) {
+        List<GrantedAuthority> list = new ArrayList<>();
 
         authorities.forEach(auth -> list.add(new SimpleGrantedAuthority(auth)));
         return list;

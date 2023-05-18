@@ -2,13 +2,25 @@ package com.terrator.SpringSecurityDemo.controller;
 
 import com.terrator.SpringSecurityDemo.entity.SecurityUser;
 import com.terrator.SpringSecurityDemo.model.UserModel;
+import com.terrator.SpringSecurityDemo.security.CustomAuthenticationProvider;
 import com.terrator.SpringSecurityDemo.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.session.SessionAuthenticationException;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -23,10 +35,13 @@ public class HomeController {
 //    private AuthorityService authorityService;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private BCryptPasswordEncoder encoder;
+
+    @Autowired
+    private CustomAuthenticationProvider authenticationProvider;
 
 //    @Autowired
-//    private CustomAuthenticationProvider authenticationProvider;
+//    private AuthenticationManager authenticationManager;
 
     @GetMapping("/home")
     public String home() {
@@ -48,25 +63,28 @@ public class HomeController {
     public ResponseEntity<Object> register(@RequestBody @NotNull UserModel userModel) {
         ModelMapper modelMapper = new ModelMapper();
         SecurityUser securityUser = modelMapper.map(userModel, SecurityUser.class);
-        securityUser.setPassword(passwordEncoder.encode(userModel.getPassword()));
+        securityUser.setPassword(encoder.encode(userModel.getPassword()));
         return userService.save(securityUser);
     }
 
-//    @PostMapping("/login")
-//    public ResponseEntity<HttpStatus> login(@RequestBody @NotNull UserModel userModel) throws Exception {
+    @PostMapping("/login")
+    public ResponseEntity<HttpStatus> login(@RequestBody @NotNull UserModel userModel) throws Exception {
 //        Authentication authentication;
-//
-//        try {
+
+        try {
 //            SecurityUser user = userService.findByEmail(userModel.getEmail());
-//            authentication = authenticationProvider.authenticate(
-//            new UsernamePasswordAuthenticationToken(userModel.getEmail(), userModel.getPassword(), new ArrayList<>()));
-//            SecurityContextHolder.getContext().setAuthentication(authentication);
-//        } catch (BadCredentialsException exception) {
+            Authentication authentication = authenticationProvider.authenticate(
+                    new UsernamePasswordAuthenticationToken(userModel.getEmail(),
+                        userModel.getPassword(),
+                        new ArrayList<>()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (BadCredentialsException exception) {
 //            throw new Exception("Invalid credential");
-//        }
-//
-//        return new ResponseEntity<HttpStatus>(HttpStatus.OK);
-//    }
+            return new ResponseEntity<HttpStatus>(HttpStatus.valueOf(exception.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<HttpStatus>(HttpStatus.OK);
+    }
 
     @GetMapping("/profile")
     @PreAuthorize("hasAuthority('ROLE_USER')")

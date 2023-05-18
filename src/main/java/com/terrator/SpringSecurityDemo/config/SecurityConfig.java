@@ -3,6 +3,7 @@ package com.terrator.SpringSecurityDemo.config;
 import com.terrator.SpringSecurityDemo.security.CustomAuthenticationProvider;
 import com.terrator.SpringSecurityDemo.security.CustomUserDetailsService;
 //import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,6 +24,7 @@ import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import javax.sql.DataSource;
 
@@ -39,7 +42,7 @@ public class SecurityConfig {
     private CustomAuthenticationProvider customAuthenticationProvider;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(@NotNull HttpSecurity http) throws Exception {
         return http
             .csrf().disable()
             .authorizeHttpRequests()
@@ -47,15 +50,23 @@ public class SecurityConfig {
             .and()
             .authorizeHttpRequests()
             .requestMatchers("/user/**", "/admin/**").authenticated()
-            .and().formLogin().and().build();
+//                .and()
+            .and().formLogin()
+//                .httpBasic()
+//                .and()
+//                .sessionManagement()
+//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+//                .authenticationProvider(customAuthenticationProvider)
+            .build();
     }
 
-    @Bean
-    public AuthenticationManager authManager(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
-        return authenticationManagerBuilder.build();
-    }
+//    @Bean
+//    public AuthenticationManager authManager(@NotNull HttpSecurity http) throws Exception {
+//        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+//        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
+//        return authenticationManagerBuilder.build();
+//    }
 
 //    @Bean
 //    public UserDetailsService userDetailsService() {
