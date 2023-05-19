@@ -3,9 +3,7 @@ package com.terrator.SpringSecurityDemo.service;
 import com.terrator.SpringSecurityDemo.entity.SecurityUser;
 import com.terrator.SpringSecurityDemo.repository.SecurityUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,12 +25,17 @@ public class UserService implements UserServiceInterface {
     }
 
     @Override
-    public ResponseEntity save(SecurityUser securityUser)  {
-        try {
-            securityUserRepository.save(securityUser);
-            return new ResponseEntity("User: " + securityUser.getName() + " has been registered.", HttpStatus.CREATED);
-        } catch (DataAccessException e) {
-            return new ResponseEntity("Error: during saving; most likely duplicate data. " + e.toString(), HttpStatus.BAD_REQUEST);
-        }
+    public void save(SecurityUser securityUser)  {
+        securityUserRepository.save(securityUser);
+    }
+
+    @Override
+    public SecurityUser findByEmail(String email) {
+        return securityUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User with email: " + email + " not found"));
+    }
+
+    @Override
+    public SecurityUser findById(Long id) {
+        return securityUserRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User with id: " + id + " not found"));
     }
 }
