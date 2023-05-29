@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/user")
 public class HomeController {
