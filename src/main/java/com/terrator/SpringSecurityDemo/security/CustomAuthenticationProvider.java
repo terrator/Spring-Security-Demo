@@ -1,10 +1,9 @@
 package com.terrator.SpringSecurityDemo.security;
 
-import com.terrator.SpringSecurityDemo.entity.SecurityUser;
+import com.terrator.SpringSecurityDemo.entity.User;
 import com.terrator.SpringSecurityDemo.repository.SecurityUserRepository;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,17 +11,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class CustomAuthenticationProvider implements AuthenticationProvider {
@@ -30,23 +24,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private SecurityUserRepository securityUserRepository;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-//    @Autowired
-//    private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public Authentication authenticate(@NotNull Authentication authentication) throws AuthenticationException {
         String email = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        SecurityUser user = securityUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = securityUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (encoder.matches(password, user.getPassword())) {
-//            UserDetails principal = new User(email, password, getAuthorities(user.getRoles()));
-            return new UsernamePasswordAuthenticationToken(email, password, getAuthorities(user.getRoles()));
+            return new UsernamePasswordAuthenticationToken(email, password, user.getAuthorities());
         } else {
             throw new BadCredentialsException("Invalid Credentials");
         }
-//        return null;
     }
 
     private @NotNull List<GrantedAuthority> getAuthorities(@NotNull List<String> authorities) {
@@ -60,15 +50,4 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     public boolean supports(Class<?> authentication) {
         return authentication.equals(UsernamePasswordAuthenticationToken.class);
     }
-
-//    @Bean
-//    public PasswordEncoder encoder() {
-//        return new BCryptPasswordEncoder();
-//    }
-
-//    public void setUserDetailsService(UserDetailsService userDetailsService) {
-//    }
-//
-//    public void setPasswordEncoder(PasswordEncoder encoder) {
-//    }
 }

@@ -1,52 +1,41 @@
 package com.terrator.SpringSecurityDemo.config;
 
-import com.terrator.SpringSecurityDemo.security.CustomAuthenticationProvider;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-    @Autowired
-    private CustomAuthenticationProvider customAuthenticationProvider;
+    private final jwtAuthenticationFilter jwtAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
 
     @Bean
     public SecurityFilterChain filterChain(@NotNull HttpSecurity http) throws Exception {
-        return http
-            .csrf().disable()
+        http
+            .csrf()
+            .disable()
             .authorizeHttpRequests()
-            .requestMatchers("/user/login", "/user/home", "/user/register", "/admin/authorities", "/user/list").permitAll()
+            .requestMatchers("/user/login", "/user/register", "/user/home")
+            .permitAll()
+            .requestMatchers("/user/**", "/admin/**")
+            .authenticated()
             .and()
-            .authorizeHttpRequests()
-            .requestMatchers("/user/**", "/admin/**").authenticated()
-//            .and().formLogin()
-                .and().httpBasic().authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
-            .build();
-    }
-
-    @Bean
-    public AuthenticationManager authManager(@NotNull HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        authenticationManagerBuilder.authenticationProvider(customAuthenticationProvider);
-        return authenticationManagerBuilder.build();
-    }
-
-    @Bean
-    public PasswordEncoder encoder() {
-        return new BCryptPasswordEncoder();
+            .authenticationProvider(authenticationProvider)
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
     }
 }

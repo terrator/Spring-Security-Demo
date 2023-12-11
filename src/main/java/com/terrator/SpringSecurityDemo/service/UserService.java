@@ -1,6 +1,6 @@
 package com.terrator.SpringSecurityDemo.service;
 
-import com.terrator.SpringSecurityDemo.entity.SecurityUser;
+import com.terrator.SpringSecurityDemo.entity.User;
 import com.terrator.SpringSecurityDemo.repository.SecurityUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,22 +20,22 @@ public class UserService implements UserServiceInterface {
 //    @Autowired
 //    private AuthorityRepository authorityRepository;
     @Override
-    public List<SecurityUser> geUsers() {
+    public List<User> geUsers() {
         return securityUserRepository.findAll();
     }
 
     @Override
-    public void save(SecurityUser securityUser)  {
+    public void save(User securityUser)  {
         securityUserRepository.save(securityUser);
     }
 
     @Override
-    public SecurityUser findByEmail(String email) {
+    public User findByEmail(String email) {
         return securityUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User with email: " + email + " not found"));
     }
 
     @Override
-    public SecurityUser findById(Long id) {
+    public User findById(Long id) {
         return securityUserRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User with id: " + id + " not found"));
     }
 }

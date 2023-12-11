@@ -1,12 +1,12 @@
 package com.terrator.SpringSecurityDemo.service;
 
-import com.terrator.SpringSecurityDemo.entity.SecurityUser;
+import com.terrator.SpringSecurityDemo.entity.User;
 
 import java.util.List;
 
 public interface UserServiceInterface {
-    public List<SecurityUser> geUsers();
-    public void save(SecurityUser user);
-    public SecurityUser findByEmail(String email);
-    public SecurityUser findById(Long id);
+    public List<User> geUsers();
+    public void save(User user);
+    public User findByEmail(String email);
+    public User findById(Long id);
 }

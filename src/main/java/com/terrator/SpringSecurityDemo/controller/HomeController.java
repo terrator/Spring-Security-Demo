@@ -1,19 +1,18 @@
 package com.terrator.SpringSecurityDemo.controller;
 
-import com.terrator.SpringSecurityDemo.entity.SecurityUser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.terrator.SpringSecurityDemo.entity.User;
+import com.terrator.SpringSecurityDemo.model.AuthenticationResponse;
 import com.terrator.SpringSecurityDemo.model.UserModel;
-import com.terrator.SpringSecurityDemo.security.CustomAuthenticationProvider;
-import com.terrator.SpringSecurityDemo.service.UserService;
+import com.terrator.SpringSecurityDemo.repository.SecurityUserRepository;
+import com.terrator.SpringSecurityDemo.service.AuthenticationService;
+import jakarta.annotation.security.RolesAllowed;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -21,15 +20,10 @@ import java.util.*;
 @CrossOrigin
 @RestController
 @RequestMapping("/user")
+@RequiredArgsConstructor
 public class HomeController {
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private BCryptPasswordEncoder encoder;
-
-    @Autowired
-    private CustomAuthenticationProvider authenticationProvider;
+    private final SecurityUserRepository repository;
+    private final AuthenticationService service;
 
     @GetMapping("/home")
     public String home() {
@@ -43,49 +37,33 @@ public class HomeController {
     }
 
     @GetMapping("/list")
-    public List<SecurityUser> getUsers() {
-        return userService.geUsers();
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public List<User> getUsers() {
+        return repository.findAll();
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @NotNull UserModel userModel) {
-        try {
-            ModelMapper modelMapper = new ModelMapper();
-            SecurityUser securityUser = modelMapper.map(userModel, SecurityUser.class);
-            securityUser.setPassword(encoder.encode(userModel.getPassword()));
-            userService.save(securityUser);
-        }
-        catch (Exception exception) {
-            return new ResponseEntity<>("Unable to register; most likely duplicate email: " + userModel.getEmail(), HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>("User has been registered", HttpStatus.OK);
+    public ResponseEntity<AuthenticationResponse> register(@RequestBody @NotNull UserModel userModel) {
+        return ResponseEntity.ok(service.register(userModel));
     }
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> login(@RequestBody @NotNull UserModel userModel) {
-        try {
-            SecurityUser user = userService.findByEmail(userModel.getEmail());
-            Authentication authentication = authenticationProvider.authenticate(
-                    new UsernamePasswordAuthenticationToken(userModel.getEmail(),
-                        userModel.getPassword(),
-                        new ArrayList<>()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (Exception exception) {
-            return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>("User with email: " + userModel.getEmail() + " logged in.", HttpStatus.OK) ;
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody @NotNull UserModel userModel) {
+        return ResponseEntity.ok(service.authenticate(userModel));
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("hasAuthority('ROLE_USER')")
-    public String profile() {
-        return "You are in the user profile";
+    @RolesAllowed({"ROLE_ADMIN", "ROLE_USER"})
+    public ResponseEntity<User> profile() throws JsonProcessingException {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_USER")
-    public SecurityUser getUser(@PathVariable("id") Long id) {
-        return userService.findById(id);
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<User> getUser(@PathVariable("id") Long id) {
+        var user = repository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User with id: " + id + " not found"));
+        return ResponseEntity.ok(user);
     }
 }
